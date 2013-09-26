@@ -456,7 +456,7 @@ static struct fsl_mxc_ldb_platform_data ldb_data = {
 	.ipu_id = 1,
 	.disp_id = 1,
 	.ext_ref = 1,
-	.mode = LDB_SEP0,
+	.mode = LDB_SEP1,
 	.sec_ipu_id = 1,
 	.sec_disp_id = 0,
 };
