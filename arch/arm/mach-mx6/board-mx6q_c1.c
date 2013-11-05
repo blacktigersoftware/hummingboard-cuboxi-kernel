@@ -46,6 +46,7 @@
 #include <linux/fec.h>
 #include <linux/memblock.h>
 #include <linux/gpio.h>
+#include <linux/ion.h>
 #include <linux/etherdevice.h>
 #include <linux/regulator/anatop-regulator.h>
 #include <linux/regulator/consumer.h>
@@ -473,6 +474,19 @@ static struct imx_ipuv3_platform_data ipu_data[] = {
 	},
 };
 
+static struct ion_platform_data imx_ion_data = {
+	.nr = 1,
+	.heaps = {
+		{
+		.id = 0,
+		.type = ION_HEAP_TYPE_CARVEOUT,
+		.name = "vpu_ion",
+		.size = SZ_16M,
+		.cacheable = 1,
+		},
+	},
+};
+
 static int spdif_clk_set_rate(struct clk *clk, unsigned long rate)
 {
 	unsigned long rate_actual;
@@ -586,6 +600,49 @@ static struct platform_pwm_backlight_data mx6_c1_pwm_dsi_backlight_data = {
 static void __init fixup_mxc_board(struct machine_desc *desc, struct tag *tags,
 				   char **cmdline, struct meminfo *mi)
 {
+	char *str;
+	struct tag *t;
+	int i = 0;
+	struct ipuv3_fb_platform_data *pdata_fb = c1_fb_data;
+
+	for_each_tag(t, tags) {
+		if (t->hdr.tag == ATAG_CMDLINE) {
+			str = t->u.cmdline.cmdline;
+			str = strstr(str, "fbmem=");
+			if (str != NULL) {
+				str += 6;
+				pdata_fb[i++].res_size[0] = memparse(str, &str);
+				while (*str == ',' &&
+					i < ARRAY_SIZE(c1_fb_data)) {
+					str++;
+					pdata_fb[i++].res_size[0] = memparse(str, &str);
+				}
+			}
+			/* ION reserved memory */
+			str = t->u.cmdline.cmdline;
+			str = strstr(str, "ionmem=");
+			if (str != NULL) {
+				str += 7;
+				imx_ion_data.heaps[0].size = memparse(str, &str);
+			}
+			/* Primary framebuffer base address */
+			str = t->u.cmdline.cmdline;
+			str = strstr(str, "fb0base=");
+			if (str != NULL) {
+				str += 8;
+				pdata_fb[0].res_base[0] =
+						simple_strtol(str, &str, 16);
+			}
+			/* GPU reserved memory */
+			str = t->u.cmdline.cmdline;
+			str = strstr(str, "gpumem=");
+			if (str != NULL) {
+				str += 7;
+				imx6q_gpu_pdata.reserved_mem_size = memparse(str, &str);
+			}
+			break;
+		}
+	}
 }
 
 static int __init caam_setup(char *__unused)
