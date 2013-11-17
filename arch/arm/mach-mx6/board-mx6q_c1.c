@@ -46,7 +46,9 @@
 #include <linux/fec.h>
 #include <linux/memblock.h>
 #include <linux/gpio.h>
+#ifdef CONFIG_ANDROID
 #include <linux/ion.h>
+#endif
 #include <linux/etherdevice.h>
 #include <linux/regulator/anatop-regulator.h>
 #include <linux/regulator/consumer.h>
@@ -473,6 +475,7 @@ static struct imx_ipuv3_platform_data ipu_data[] = {
 	},
 };
 
+#ifdef CONFIG_ANDROID
 static struct ion_platform_data imx_ion_data = {
 	.nr = 1,
 	.heaps = {
@@ -485,7 +488,7 @@ static struct ion_platform_data imx_ion_data = {
 		},
 	},
 };
-
+#endif
 static int spdif_clk_set_rate(struct clk *clk, unsigned long rate)
 {
 	unsigned long rate_actual;
@@ -617,6 +620,7 @@ static void __init fixup_mxc_board(struct machine_desc *desc, struct tag *tags,
 					pdata_fb[i++].res_size[0] = memparse(str, &str);
 				}
 			}
+#ifdef CONFIG_ANDROID
 			/* ION reserved memory */
 			str = t->u.cmdline.cmdline;
 			str = strstr(str, "ionmem=");
@@ -624,6 +628,7 @@ static void __init fixup_mxc_board(struct machine_desc *desc, struct tag *tags,
 				str += 7;
 				imx_ion_data.heaps[0].size = memparse(str, &str);
 			}
+#endif
 			/* Primary framebuffer base address */
 			str = t->u.cmdline.cmdline;
 			str = strstr(str, "fb0base=");
