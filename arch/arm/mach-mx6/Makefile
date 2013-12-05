@@ -15,6 +15,7 @@ obj-$(CONFIG_MACH_MX6Q_SABRELITE) += board-mx6q_sabrelite.o
 obj-$(CONFIG_MACH_MX6Q_SABRESD) += board-mx6q_sabresd.o mx6q_sabresd_pmic_pfuze100.o
 obj-$(CONFIG_MACH_MICROSOM) += board-mx6q_microsom.o
 obj-$(CONFIG_MACH_C1) += board-mx6q_c1.o
+obj-$(CONFIG_MACH_CUBOX_I) += board-mx6q_cubox-i.o
 obj-$(CONFIG_MACH_MX6Q_SABREAUTO) += board-mx6q_sabreauto.o mx6q_sabreauto_pmic_pfuze100.o
 obj-$(CONFIG_MACH_MX6Q_HDMIDONGLE) += board-mx6q_hdmidongle.o
 obj-$(CONFIG_SMP) += plat_hotplug.o platsmp.o headsmp.o
