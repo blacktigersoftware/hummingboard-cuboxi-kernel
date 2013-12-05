@@ -28,6 +28,9 @@ config	SOC_IMX6Q
 config	SOC_IMX6SL
 	bool
 
+config	MACH_MICROSOM
+	bool
+
 config MACH_MX6Q_ARM2
 	bool "Support i.MX 6Quad Armadillo2 platform"
 	select ARCH_MX6Q
@@ -286,6 +289,7 @@ config MACH_C1
 	bool "Support SolidRun i.MX6 Carrier One platform"
 	select ARCH_MX6Q
 	select SOC_IMX6Q
+	select MACH_MICROSOM
 	select IMX_HAVE_PLATFORM_IMX_UART
 	select IMX_HAVE_PLATFORM_DMA
 	select IMX_HAVE_PLATFORM_FEC
