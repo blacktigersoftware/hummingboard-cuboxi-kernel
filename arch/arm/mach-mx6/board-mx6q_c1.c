@@ -115,6 +115,13 @@ static struct i2c_board_info mxc_i2c2_board_info[] __initdata = {
 	},
 };
 
+static const struct imx_pcie_platform_data mx6_c1_pcie_data __initconst = {
+	.pcie_pwr_en	= -EINVAL,
+	.pcie_rst	= -EINVAL,
+	.pcie_wake_up	= -EINVAL,
+	.pcie_dis	= -EINVAL,
+};
+
 static void imx6q_c1_usbotg_vbus(bool on)
 {
 	if (on)
@@ -364,7 +371,8 @@ static void __init mx6_c1_board_init(void)
 	imx6q_add_spdif(&mxc_spdif_data);
 	imx6q_add_spdif_dai();
 	imx6q_add_spdif_audio_device();
-
+	/* Add PCIe RC interface support */
+	imx6q_add_pcie(&mx6_c1_pcie_data);
 #ifdef CONFIG_IR_GPIO_CIR
 	/* Register the infra red receiver as a GPIO device */
 	platform_device_register(&c1_ir);

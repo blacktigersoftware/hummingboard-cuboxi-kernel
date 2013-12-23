@@ -542,13 +542,6 @@ static int __init caam_setup(char *__unused)
 }
 early_param("caam", caam_setup);
 
-static const struct imx_pcie_platform_data mx6_usom_pcie_data __initconst = {
-	.pcie_pwr_en	= -EINVAL,
-	.pcie_rst	= -EINVAL,
-	.pcie_wake_up	= -EINVAL,
-	.pcie_dis	= -EINVAL,
-};
-
 static int usom_bt_power_change(int status)
 {
 	if(status){
@@ -754,8 +747,6 @@ void __init mx6_usom_board_init(void)
 
 	imx6q_add_busfreq();
 
-	/* Add PCIe RC interface support */
-	imx6q_add_pcie(&mx6_usom_pcie_data);
 	imx6_add_armpmu();
 	imx6q_add_perfmon(0);
 	imx6q_add_perfmon(1);
