@@ -93,6 +93,7 @@
 
 static struct clk *sata_clk;
 static int caam_enabled;
+static int disable_wifi_detect = 0;
 
 extern char *gp_reg_id;
 extern char *soc_reg_id;
@@ -752,7 +753,8 @@ void __init mx6_usom_board_init(void)
 	imx6q_add_perfmon(1);
 	imx6q_add_perfmon(2);
 	/* WLan and BT stuff */
-	imx6q_usom_init_wifi_bt();
+	if (disable_wifi_detect != 1)
+		imx6q_usom_init_wifi_bt();
 }
 
 extern void __iomem *twd_base;
@@ -791,4 +793,12 @@ void __init mx6q_usom_reserve(void)
 	}
 
 }
+
+static int __init disable_wifi_detect_func(char *p)
+{
+	disable_wifi_detect = 1;
+	return 0;
+}
+
+early_param("disable_wifi_detect", disable_wifi_detect_func);
 
