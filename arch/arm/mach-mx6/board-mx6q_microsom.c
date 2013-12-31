@@ -601,7 +601,7 @@ static void __init imx6q_usom_init_wifi_bt(void) {
 	imx6q_add_sdhci_usdhc_imx(0, &mx6q_usom_sd1_data);
 }
 
-void imx6q_usom_init_fec(void) {
+void __init imx6q_usom_init_fec(void) {
 	struct clk *enet;
 	/* Set GPR1, bit 21 to 1 */
 	mxc_iomux_set_gpr_register(1, 21, 1, 1);
@@ -639,6 +639,7 @@ void imx6q_usom_init_fec(void) {
 void __init mx6_usom_board_init(void)
 {
 	int i;
+	struct platform_device *voutdev;
 	struct clk *clko, *clko2;
 	struct clk *new_parent;
 	int rate;
@@ -680,7 +681,15 @@ void __init mx6_usom_board_init(void)
 
 	imx6q_add_vdoa();
 	imx6q_add_ldb(&ldb_data);
-	imx6q_add_v4l2_output(0);
+	voutdev = imx6q_add_v4l2_output(0);
+	if (vout_mem.res_msize && voutdev) {
+		dma_declare_coherent_memory(&voutdev->dev,
+					    vout_mem.res_mbase,
+					    vout_mem.res_mbase,
+					    vout_mem.res_msize,
+					    (DMA_MEMORY_MAP |
+					     DMA_MEMORY_EXCLUSIVE));
+	}
 	imx6q_add_v4l2_capture(0, &capture_data[0]);
 	imx6q_add_v4l2_capture(1, &capture_data[1]);
 	imx6q_add_imx_snvs_rtc();
