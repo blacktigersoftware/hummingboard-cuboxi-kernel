@@ -268,14 +268,14 @@ static struct platform_device cubox_i_ir = {
 };
 #endif
 
-static struct platform_pwm_backlight_data mx6_cubox_i_pwm_lvds_backlight_data = {
+static struct platform_pwm_backlight_data mx6_cubox_i_pwm_front_led_data = {
 	.pwm_id = 2,
 	.max_brightness = 248,
 	.dft_brightness = 128,
 	.pwm_period_ns = 50000,
 };
 
-static struct platform_pwm_backlight_data mx6_cubox_i_pwm_dsi_backlight_data = {
+static struct platform_pwm_backlight_data mx6_cubox_i_pwm_ir_tx_data = {
 	.pwm_id = 3,
 	.max_brightness = 203,
 	.dft_brightness = 128,
@@ -325,8 +325,8 @@ static void __init mx6_cubox_i_board_init(void)
 
 	imx6q_add_mxc_pwm(0);
 	imx6q_add_mxc_pwm(1);
-	imx6q_add_mxc_pwm_backlight(0, &mx6_cubox_i_pwm_lvds_backlight_data);
-	imx6q_add_mxc_pwm_backlight(1, &mx6_cubox_i_pwm_dsi_backlight_data);
+	imx6q_add_mxc_pwm_backlight(0, &mx6_cubox_i_pwm_front_led_data);
+	imx6q_add_mxc_pwm_backlight(1, &mx6_cubox_i_pwm_ir_tx_data);
 	mxc_spdif_data.spdif_core_clk = clk_get_sys("mxc_spdif.0", NULL);
 	clk_put(mxc_spdif_data.spdif_core_clk);
 	imx6q_add_spdif(&mxc_spdif_data);
