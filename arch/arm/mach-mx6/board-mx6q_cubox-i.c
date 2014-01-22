@@ -53,6 +53,7 @@
 #include <linux/regulator/fixed.h>
 #ifdef CONFIG_IR_GPIO_CIR
 #include <media/gpio-ir-recv.h>
+#include <media/rc-map.h>
 #endif
 
 #include <mach/common.h>
@@ -257,6 +258,7 @@ static int __init imx6q_init_audio(void)
 static struct gpio_ir_recv_platform_data cubox_i_ir_data = {
 	.gpio_nr = GPIO_IR_IN,
 	.active_low = 1,
+	.map_name = RC_MAP_RC6_MCE,
 };
 
 static struct platform_device cubox_i_ir = {
