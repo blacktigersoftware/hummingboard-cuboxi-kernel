@@ -285,8 +285,8 @@ config MACH_MX6Q_HDMIDONGLE
 	  Include support for i.MX 6Quad HDMI Dongle platform. This includes specific
 	  configurations for the board and its peripherals.
 
-config MACH_C1
-	bool "Support SolidRun i.MX6 Carrier One platform"
+config MACH_HB
+	bool "Support SolidRun i.MX6 HummingBoard"
 	select ARCH_MX6Q
 	select SOC_IMX6Q
 	select MACH_MICROSOM
@@ -316,7 +316,7 @@ config MACH_C1
 	select IMX_HAVE_PLATFORM_IMX_PCIE
 	select IMX_HAVE_PLATFORM_IMX_CAAM
 	help
-	  Include support for SolidRun i.MX6 based Carrier One board
+	  Include support for SolidRun i.MX6 based HummingBoard
 
 config MACH_CUBOX_I
 	bool "Support SolidRun i.MX6 CuBox-i family of products"

@@ -17,12 +17,12 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifndef _BOARD_MX6Q_C1_H
-#define _BOARD_MX6Q_C1_H
+#ifndef _BOARD_MX6Q_HB_H
+#define _BOARD_MX6Q_HB_H
 
 #include <mach/iomux-mx6q.h>
 
-static iomux_v3_cfg_t mx6q_c1_pads[] = {
+static iomux_v3_cfg_t mx6q_hb_pads[] = {
 	/* SPDIF out */
 	MX6Q_PAD_GPIO_17__SPDIF_OUT1,
 

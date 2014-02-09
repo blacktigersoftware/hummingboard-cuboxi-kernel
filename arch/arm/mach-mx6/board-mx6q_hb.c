@@ -77,13 +77,12 @@
 #include "devices-imx6q.h"
 #include "crm_regs.h"
 #include "cpu_op-mx6.h"
-#include "board-mx6q_c1.h"
-#include "board-mx6dl_c1.h"
+#include "board-mx6q_hb.h"
+#include "board-mx6dl_hb.h"
 
 #define GPIO_IR_IN		IMX_GPIO_NR(1, 2)
-// #define GPIO_IR_IN		IMX_GPIO_NR(3, 9) CuBox-i
-#define C1_USB_OTG_PWR	IMX_GPIO_NR(3, 22)
-#define C1_USB_H1_PWR		IMX_GPIO_NR(1, 0)
+#define HB_USB_OTG_PWR	IMX_GPIO_NR(3, 22)
+#define HB_USB_H1_PWR		IMX_GPIO_NR(1, 0)
 #ifdef CONFIG_MX6_ENET_IRQ_TO_GPIO
 #define MX6_ENET_IRQ		IMX_GPIO_NR(4, 18) /* TODO */
 #endif
@@ -93,14 +92,14 @@ extern char *gp_reg_id;
 extern char *soc_reg_id;
 extern char *pu_reg_id;
 
-static const struct esdhc_platform_data mx6q_c1_sd2_data __initconst = {
+static const struct esdhc_platform_data mx6q_hb_sd2_data __initconst = {
 	.keep_power_at_suspend = 1,
 	.support_8bit = 0,
 	.delay_line = 0,
 	.cd_type = ESDHC_CD_CONTROLLER,
 };
 
-static struct imxi2c_platform_data mx6q_c1_i2c_data = {
+static struct imxi2c_platform_data mx6q_hb_i2c_data = {
 	.bitrate = 100000,
 };
 
@@ -115,59 +114,59 @@ static struct i2c_board_info mxc_i2c2_board_info[] __initdata = {
 	},
 };
 
-static const struct imx_pcie_platform_data mx6_c1_pcie_data __initconst = {
+static const struct imx_pcie_platform_data mx6_hb_pcie_data __initconst = {
 	.pcie_pwr_en	= -EINVAL,
 	.pcie_rst	= -EINVAL,
 	.pcie_wake_up	= -EINVAL,
 	.pcie_dis	= -EINVAL,
 };
 
-static void imx6q_c1_usbotg_vbus(bool on)
+static void imx6q_hb_usbotg_vbus(bool on)
 {
 	if (on)
-		gpio_set_value(C1_USB_OTG_PWR, 1);
+		gpio_set_value(HB_USB_OTG_PWR, 1);
 	else
-		gpio_set_value(C1_USB_OTG_PWR, 0);
+		gpio_set_value(HB_USB_OTG_PWR, 0);
 }
 
-static void imx6q_c1_host1_vbus(bool on)
+static void imx6q_hb_host1_vbus(bool on)
 {
 	if (on)
-		gpio_set_value(C1_USB_H1_PWR, 1);
+		gpio_set_value(HB_USB_H1_PWR, 1);
 	else
-		gpio_set_value(C1_USB_H1_PWR, 0);
+		gpio_set_value(HB_USB_H1_PWR, 0);
 }
 
-static void __init imx6q_c1_init_usb(void)
+static void __init imx6q_hb_init_usb(void)
 {
 	int ret = 0;
 	imx_otg_base = MX6_IO_ADDRESS(MX6Q_USB_OTG_BASE_ADDR);
 	/* disable external charger detect,
 	 * or it will affect signal quality at dp .
 	 */
-	ret = gpio_request(C1_USB_OTG_PWR, "usb-pwr");
+	ret = gpio_request(HB_USB_OTG_PWR, "usb-pwr");
 	if (ret) {
-		pr_err("failed to get GPIO C1_USB_OTG_PWR: %d\n",
+		pr_err("failed to get GPIO HB_USB_OTG_PWR: %d\n",
 			ret);
 		return;
 	}
-	gpio_direction_output(C1_USB_OTG_PWR, 0);
+	gpio_direction_output(HB_USB_OTG_PWR, 0);
 	/* keep USB host1 VBUS always on */
-	ret = gpio_request(C1_USB_H1_PWR, "usb-h1-pwr");
+	ret = gpio_request(HB_USB_H1_PWR, "usb-h1-pwr");
 	if (ret) {
-		pr_err("failed to get GPIO C1_USB_H1_PWR: %d\n",
+		pr_err("failed to get GPIO HB_USB_H1_PWR: %d\n",
 			ret);
 		return;
 	}
-	gpio_direction_output(C1_USB_H1_PWR, 0);
+	gpio_direction_output(HB_USB_H1_PWR, 0);
 	/*
 	 * ID pin is sampled from GPIO_1. Notice that this pad is configured
 	 * to be pulled-down 100kOhm by default.
 	 */
 	mxc_iomux_set_gpr_register(1, 13, 1, 1);
 
-	mx6_set_otghost_vbus_func(imx6q_c1_usbotg_vbus);
-	mx6_set_host1_vbus_func(imx6q_c1_host1_vbus);
+	mx6_set_otghost_vbus_func(imx6q_hb_usbotg_vbus);
+	mx6_set_host1_vbus_func(imx6q_hb_host1_vbus);
 }
 
 struct imx_vout_mem {
@@ -179,28 +178,28 @@ static struct imx_vout_mem vout_mem __initdata = {
 	.res_msize = SZ_128M,
 };
 
-static struct regulator_consumer_supply c1_vmmc_consumers[] = {
+static struct regulator_consumer_supply hb_vmmc_consumers[] = {
 	REGULATOR_SUPPLY("vmmc", "sdhci-esdhc-imx.1"),
 	REGULATOR_SUPPLY("vmmc", "sdhci-esdhc-imx.2"),
 };
 
-static struct regulator_init_data c1_vmmc_init = {
-	.num_consumer_supplies = ARRAY_SIZE(c1_vmmc_consumers),
-	.consumer_supplies = c1_vmmc_consumers,
+static struct regulator_init_data hb_vmmc_init = {
+	.num_consumer_supplies = ARRAY_SIZE(hb_vmmc_consumers),
+	.consumer_supplies = hb_vmmc_consumers,
 };
 
-static struct fixed_voltage_config c1_vmmc_reg_config = {
+static struct fixed_voltage_config hb_vmmc_reg_config = {
 	.supply_name		= "vmmc",
 	.microvolts		= 3300000,
 	.gpio			= -1,
-	.init_data		= &c1_vmmc_init,
+	.init_data		= &hb_vmmc_init,
 };
 
-static struct platform_device c1_vmmc_reg_devices = {
+static struct platform_device hb_vmmc_reg_devices = {
 	.name	= "reg-fixed-voltage",
 	.id	= 3,
 	.dev	= {
-		.platform_data = &c1_vmmc_reg_config,
+		.platform_data = &hb_vmmc_reg_config,
 	},
 };
 
@@ -264,30 +263,30 @@ static int __init imx6q_init_audio(void)
 }
 
 #ifdef CONFIG_IR_GPIO_CIR
-static struct gpio_ir_recv_platform_data c1_ir_data = {
+static struct gpio_ir_recv_platform_data hb_ir_data = {
 	.gpio_nr = GPIO_IR_IN,
 	.active_low = 1,
 };
 
-static struct platform_device c1_ir = {
+static struct platform_device hb_ir = {
         .name   = "gpio-rc-recv",
 	.id     = -1,
 	.dev    = {
-		.platform_data  = &c1_ir_data,
+		.platform_data  = &hb_ir_data,
 	}
 };
 #endif
 
 #if 0
 /* Following will activate the analog audio out for testing */
-static struct platform_pwm_backlight_data mx6_c1_pwm_dummy1_backlight_data = {
+static struct platform_pwm_backlight_data mx6_hb_pwm_dummy1_backlight_data = {
 	.pwm_id = 0,
 	.max_brightness = 200,
 	.dft_brightness = 128,
 	.pwm_period_ns = 5000000,
 };
 
-static struct platform_pwm_backlight_data mx6_c1_pwm_dummy2_backlight_data = {
+static struct platform_pwm_backlight_data mx6_hb_pwm_dummy2_backlight_data = {
 	.pwm_id = 1,
 	.max_brightness = 201,
 	.dft_brightness = 128,
@@ -295,14 +294,14 @@ static struct platform_pwm_backlight_data mx6_c1_pwm_dummy2_backlight_data = {
 };
 #endif
 
-static struct platform_pwm_backlight_data mx6_c1_pwm_lvds_backlight_data = {
+static struct platform_pwm_backlight_data mx6_hb_pwm_lvds_backlight_data = {
 	.pwm_id = 2,
 	.max_brightness = 248,
 	.dft_brightness = 128,
 	.pwm_period_ns = 50000,
 };
 
-static struct platform_pwm_backlight_data mx6_c1_pwm_dsi_backlight_data = {
+static struct platform_pwm_backlight_data mx6_hb_pwm_dsi_backlight_data = {
 	.pwm_id = 3,
 	.max_brightness = 203,
 	.dft_brightness = 128,
@@ -327,31 +326,31 @@ extern void __init mx6q_usom_reserve(void);
 extern struct sys_timer mx6_usom_timer;
 extern struct viv_gpu_platform_data imx6q_gpu_pdata;
 
-static void __init mx6_c1_board_init(void)
+static void __init mx6_hb_board_init(void)
 {
 	if (cpu_is_mx6q())
-		mxc_iomux_v3_setup_multiple_pads(mx6q_c1_pads,
-			ARRAY_SIZE(mx6q_c1_pads));
+		mxc_iomux_v3_setup_multiple_pads(mx6q_hb_pads,
+			ARRAY_SIZE(mx6q_hb_pads));
 	else if (cpu_is_mx6dl()) {
-		mxc_iomux_v3_setup_multiple_pads(mx6dl_c1_pads,
-			ARRAY_SIZE(mx6dl_c1_pads));
+		mxc_iomux_v3_setup_multiple_pads(mx6dl_hb_pads,
+			ARRAY_SIZE(mx6dl_hb_pads));
 	}
 	mx6_usom_board_init();
 	imx6q_add_imx_uart(0, NULL);
 
-	imx6q_add_imx_i2c(0, &mx6q_c1_i2c_data);
-	imx6q_add_imx_i2c(2, &mx6q_c1_i2c_data);
+	imx6q_add_imx_i2c(0, &mx6q_hb_i2c_data);
+	imx6q_add_imx_i2c(2, &mx6q_hb_i2c_data);
 	i2c_register_board_info(0, mxc_i2c0_board_info, /* I2C1 */
 			ARRAY_SIZE(mxc_i2c0_board_info));
 	i2c_register_board_info(2, mxc_i2c2_board_info, /* I2C3 */
 			ARRAY_SIZE(mxc_i2c2_board_info));
 
-	imx6q_add_sdhci_usdhc_imx(1, &mx6q_c1_sd2_data);
+	imx6q_add_sdhci_usdhc_imx(1, &mx6q_hb_sd2_data);
 //	imx_add_viv_gpu(&imx6_gpu_data, &imx6q_gpu_pdata);
-	imx6q_c1_init_usb();
+	imx6q_hb_init_usb();
 
 	imx6q_init_audio();
-	platform_device_register(&c1_vmmc_reg_devices);
+	platform_device_register(&hb_vmmc_reg_devices);
 	imx_asrc_data.asrc_core_clk = clk_get(NULL, "asrc_clk");
 	imx_asrc_data.asrc_audio_clk = clk_get(NULL, "asrc_serial_clk");
 	imx6q_add_asrc(&imx_asrc_data);
@@ -360,11 +359,11 @@ static void __init mx6_c1_board_init(void)
 	imx6q_add_mxc_pwm(1);
 	imx6q_add_mxc_pwm(2);
 	imx6q_add_mxc_pwm(3);
-	imx6q_add_mxc_pwm_backlight(0, &mx6_c1_pwm_lvds_backlight_data);
-	imx6q_add_mxc_pwm_backlight(1, &mx6_c1_pwm_dsi_backlight_data);
+	imx6q_add_mxc_pwm_backlight(0, &mx6_hb_pwm_lvds_backlight_data);
+	imx6q_add_mxc_pwm_backlight(1, &mx6_hb_pwm_dsi_backlight_data);
 #if 0
-	imx6q_add_mxc_pwm_backlight(2, &mx6_c1_pwm_dummy1_backlight_data);
-	imx6q_add_mxc_pwm_backlight(3, &mx6_c1_pwm_dummy2_backlight_data);
+	imx6q_add_mxc_pwm_backlight(2, &mx6_hb_pwm_dummy1_backlight_data);
+	imx6q_add_mxc_pwm_backlight(3, &mx6_hb_pwm_dummy2_backlight_data);
 #endif
 	mxc_spdif_data.spdif_core_clk = clk_get_sys("mxc_spdif.0", NULL);
 	clk_put(mxc_spdif_data.spdif_core_clk);
@@ -372,23 +371,23 @@ static void __init mx6_c1_board_init(void)
 	imx6q_add_spdif_dai();
 	imx6q_add_spdif_audio_device();
 	/* Add PCIe RC interface support */
-	imx6q_add_pcie(&mx6_c1_pcie_data);
+	imx6q_add_pcie(&mx6_hb_pcie_data);
 #ifdef CONFIG_IR_GPIO_CIR
 	/* Register the infra red receiver as a GPIO device */
-	platform_device_register(&c1_ir);
+	platform_device_register(&hb_ir);
 #endif
 }
 
 /*
- * initialize __mach_desc_MX6Q_C1 data structure.
+ * initialize __mach_desc_MX6Q_HB data structure.
  */
-MACHINE_START(C1, "SolidRun i.MX 6Quad/Dual/DualLite/Solo Carrier One Board")
+MACHINE_START(HB, "SolidRun i.MX 6Quad/Dual/DualLite/Solo HummingBoard")
 	/* Maintainer: Freescale Semiconductor, Inc. */
 	.boot_params = MX6_PHYS_OFFSET + 0x100,
 	.fixup = fixup_usom_board,
 	.map_io = mx6_map_io,
 	.init_irq = mx6_init_irq,
-	.init_machine = mx6_c1_board_init,
+	.init_machine = mx6_hb_board_init,
 	.timer = &mx6_usom_timer,
 	.reserve = mx6q_usom_reserve,
 MACHINE_END
