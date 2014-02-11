@@ -3211,11 +3211,25 @@ static int brcmf_sdbrcm_download_code_file(struct brcmf_sdio *bus)
 	uint len;
 	u8 *memblock = NULL, *memptr;
 	int ret;
+	char brcmf_sdio_fw_name[]="brcm/bcm4329_fw.bin";
 
 	brcmf_dbg(INFO, "Enter\n");
 
-	ret = request_firmware(&bus->firmware, BRCMF_SDIO_FW_NAME,
+	switch(bus->ci->chip)
+	{
+		case BCM4330_CHIP_ID:
+			strcpy(brcmf_sdio_fw_name,"brcm/bcm4330_fw.bin");
+			break;
+		case BCM4329_CHIP_ID:
+		default:
+			strcpy(brcmf_sdio_fw_name,"brcm/bcm4329_fw.bin");
+			break;
+	}
+	ret = request_firmware(&bus->firmware, brcmf_sdio_fw_name,
 			       &bus->sdiodev->func[2]->dev);
+	if(ret)
+		ret = request_firmware(&bus->firmware, BRCMF_SDIO_FW_NAME,
+				       &bus->sdiodev->func[2]->dev);
 	if (ret) {
 		brcmf_dbg(ERROR, "Fail to request firmware %d\n", ret);
 		return ret;
@@ -3310,8 +3324,24 @@ static int brcmf_sdbrcm_download_nvram(struct brcmf_sdio *bus)
 	char *memblock = NULL;
 	char *bufp;
 	int ret;
+	char brcmf_sdio_nv_name[] = "brcm/bcm4329_nvram.txt";
 
-	ret = request_firmware(&bus->firmware, BRCMF_SDIO_NV_NAME,
+	switch(bus->ci->chip)
+	{
+		case BCM4330_CHIP_ID:
+			strcpy(brcmf_sdio_nv_name,"brcm/bcm4330_nvram.txt");
+			break;
+		case BCM4329_CHIP_ID:
+		default:
+			strcpy(brcmf_sdio_nv_name,"brcm/bcm4329_nvram.txt");
+			break;
+	}
+
+	ret = request_firmware(&bus->firmware, brcmf_sdio_nv_name,
+			       &bus->sdiodev->func[2]->dev);
+
+	if (ret)
+		ret = request_firmware(&bus->firmware, BRCMF_SDIO_NV_NAME,
 			       &bus->sdiodev->func[2]->dev);
 	if (ret) {
 		brcmf_dbg(ERROR, "Fail to request nvram %d\n", ret);
