@@ -87,6 +87,7 @@
 
 #define USOM_WL_RST		IMX_GPIO_NR(5, 26)
 #define USOM_BT_RST		IMX_GPIO_NR(6, 0)
+#define USOM_BT_SHUTDOWN	IMX_GPIO_NR(6,15)
 #define USOM_REG_ON		IMX_GPIO_NR(3, 19)
 #define USOM_XTAL_ON		IMX_GPIO_NR(5, 5)
 #define USOM_ENET_RST		IMX_GPIO_NR(4, 15)
@@ -580,6 +581,8 @@ static void __init imx6q_usom_init_wifi_bt(void) {
 	gpio_direction_output(USOM_WL_RST, 0);
 	gpio_request(USOM_BT_RST, "bt-rst");
 	gpio_direction_output(USOM_BT_RST, 0);
+	gpio_request(USOM_BT_SHUTDOWN, "bt-shutdown");
+	gpio_direction_output(USOM_BT_SHUTDOWN, 0);
 	gpio_request(USOM_REG_ON, "wl-bt-reg-on");
 	gpio_direction_output(USOM_REG_ON, 0);
 	gpio_request(USOM_XTAL_ON, "wl-bt-xtal-on");
@@ -593,6 +596,7 @@ static void __init imx6q_usom_init_wifi_bt(void) {
 	msleep (2); /* 20 mSec sounds too big */
 	gpio_set_value(USOM_WL_RST, 1);
 	gpio_set_value(USOM_BT_RST, 1);
+	gpio_set_value(USOM_BT_SHUTDOWN, 1);
 	msleep (2); /* 20 mSec sounds too big */
 
 	/* Register SDIO as brfmac */
