@@ -496,7 +496,7 @@ static int anatop_thermal_set_trip_temp(struct thermal_zone_device *thermal,
 		if (tz->trips.critical.flags.valid) {
 			tz->trips.critical.temperature = CEL_TO_KELVIN(
 				*temp, tz->kelvin_offset);
-			raw_critical = raw_25c - ratio * (*temp - 25) / 100;
+			raw_critical = raw_25c - ratio * (*temp - 25000) / 100000;
 			anatop_update_alarm(raw_critical);
 		}
 		break;
@@ -909,7 +909,7 @@ static int anatop_thermal_counting_ratio(unsigned int fuse_data)
 	raw_n40c = raw_25c + (13 * ratio) / 20;
 	raw_125c = raw_25c - ratio;
 	/* Init default critical temp to set alarm */
-	raw_critical = raw_25c - ratio * (KELVIN_TO_CEL(TEMP_CRITICAL, MKELVIN_OFFSET) - 25) / 100000;
+	raw_critical = raw_25c - ratio * (KELVIN_TO_CEL(TEMP_CRITICAL, MKELVIN_OFFSET) - 25000) / 100000;
 	clk_enable(pll3_clk);
 
 	return ret;
