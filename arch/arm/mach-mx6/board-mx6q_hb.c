@@ -63,7 +63,6 @@
 #include <mach/imx-uart.h>
 #include <mach/ipu-v3.h>
 #include <mach/mxc_asrc.h>
-#include <mach/mipi_dsi.h>
 #include <mach/system.h>
 #include <mach/imx_rfkill.h>
 
@@ -80,12 +79,27 @@
 #include "board-mx6q_hb.h"
 #include "board-mx6dl_hb.h"
 
-#define GPIO_IR_IN		IMX_GPIO_NR(1, 2)
-#define HB_USB_OTG_PWR	IMX_GPIO_NR(3, 22)
+#define CAM_GPIO		IMX_GPIO_NR(2, 10)
+#define GPIO_IR_IN		IMX_GPIO_NR(3, 5)
+#define HB_USB_OTG_PWR		IMX_GPIO_NR(3, 22)
 #define HB_USB_H1_PWR		IMX_GPIO_NR(1, 0)
 #ifdef CONFIG_MX6_ENET_IRQ_TO_GPIO
 #define MX6_ENET_IRQ		IMX_GPIO_NR(4, 18) /* TODO */
 #endif
+
+#ifdef CONFIG_IMX_PCIE
+#define HB_PCIE_RST		IMX_GPIO_NR(3, 4)
+#define HB_PCIE_DIS		IMX_GPIO_NR(4, 9)
+#endif
+
+#define HEADER26_PIN07		IMX_GPIO_NR(1, 1)
+#define HEADER26_PIN11		IMX_GPIO_NR(3, 9)
+#define HEADER26_PIN12		IMX_GPIO_NR(3, 8)
+#define HEADER26_PIN13		IMX_GPIO_NR(3, 7)
+#define HEADER26_PIN15		IMX_GPIO_NR(3, 6)
+#define HEADER26_PIN16		IMX_GPIO_NR(7, 2)
+#define HEADER26_PIN18		IMX_GPIO_NR(7, 3)
+#define HEADER26_PIN22		IMX_GPIO_NR(3, 3)
 
 static int caam_enabled;
 extern char *gp_reg_id;
@@ -98,6 +112,52 @@ static const struct esdhc_platform_data mx6q_hb_sd2_data __initconst = {
 	.delay_line = 0,
 	.cd_type = ESDHC_CD_CONTROLLER,
 };
+static struct mxc_audio_platform_data mx6_hb_audio_data;
+
+static int mx6_hb_sgtl5000_init(void)
+{
+	struct clk *clko;
+	struct clk *new_parent;
+	int rate;
+
+	clko = clk_get(NULL, "clko_clk");
+	if (IS_ERR(clko)) {
+		pr_err("can't get CLKO clock.\n");
+		return PTR_ERR(clko);
+	}
+	new_parent = clk_get(NULL, "ahb");
+	if (!IS_ERR(new_parent)) {
+		clk_set_parent(clko, new_parent);
+		clk_put(new_parent);
+	}
+	rate = clk_round_rate(clko, 16000000);
+	if (rate < 8000000 || rate > 27000000) {
+		pr_err("Error:SGTL5000 mclk freq %d out of range!\n", rate);
+		clk_put(clko);
+		return -1;
+	}
+
+	mx6_hb_audio_data.sysclk = rate;
+	clk_set_rate(clko, rate);
+	clk_enable(clko);
+	return 0;
+}
+
+static struct imx_ssi_platform_data mx6_hb_ssi_pdata = {
+	.flags = IMX_SSI_DMA | IMX_SSI_SYN,
+};
+
+static struct mxc_audio_platform_data mx6_hb_audio_data = {
+	.ssi_num = 1,
+	.src_port = 2,
+	.ext_port = 5,
+	.init = mx6_hb_sgtl5000_init,
+	.hp_gpio = -1,
+};
+
+static struct platform_device mx6_hb_audio_device = {
+	.name = "imx-sgtl5000",
+};
 
 static struct imxi2c_platform_data mx6q_hb_i2c_data = {
 	.bitrate = 100000,
@@ -105,20 +165,23 @@ static struct imxi2c_platform_data mx6q_hb_i2c_data = {
 
 /* I2C1 */
 static struct i2c_board_info mxc_i2c0_board_info[] __initdata = {
-};
-
-/* I2C3 */
-static struct i2c_board_info mxc_i2c2_board_info[] __initdata = {
+	{
+		I2C_BOARD_INFO("sgtl5000", 0x0a),
+	},
 	{
 		I2C_BOARD_INFO("pcf8523", 0x68),
 	},
 };
 
+/* I2C3 */
+static struct i2c_board_info mxc_i2c2_board_info[] __initdata = {
+};
+
 static const struct imx_pcie_platform_data mx6_hb_pcie_data __initconst = {
 	.pcie_pwr_en	= -EINVAL,
-	.pcie_rst	= -EINVAL,
+	.pcie_rst	= HB_PCIE_RST,
 	.pcie_wake_up	= -EINVAL,
-	.pcie_dis	= -EINVAL,
+	.pcie_dis	= HB_PCIE_DIS,
 };
 
 static void imx6q_hb_usbotg_vbus(bool on)
@@ -160,22 +223,74 @@ static void __init imx6q_hb_init_usb(void)
 	}
 	gpio_direction_output(HB_USB_H1_PWR, 0);
 	/*
-	 * ID pin is sampled from GPIO_1. Notice that this pad is configured
+	 * ID pin is fake sampled from RX_ER pin. Notice that this pad is configured
 	 * to be pulled-down 100kOhm by default.
 	 */
-	mxc_iomux_set_gpr_register(1, 13, 1, 1);
+	mxc_iomux_set_gpr_register(1, 13, 1, 0);
 
 	mx6_set_otghost_vbus_func(imx6q_hb_usbotg_vbus);
 	mx6_set_host1_vbus_func(imx6q_hb_host1_vbus);
 }
 
-struct imx_vout_mem {
-	resource_size_t res_mbase;
-	resource_size_t res_msize;
+static struct fsl_mxc_capture_platform_data capture_data[] = {
+	{
+		.csi = 0,
+		.ipu = 0,
+		.mclk_source = 0,
+		.is_mipi = 1,
+	},
 };
 
-static struct imx_vout_mem vout_mem __initdata = {
-	.res_msize = SZ_128M,
+
+static void mx6q_mipi_sensor_io_init(void)
+{
+	struct clk *clko2;
+	struct clk *new_parent;
+	int rate, ret;
+	clko2 = clk_get(NULL, "clko2_clk");
+	if (IS_ERR(clko2))
+		pr_err("can't get CLKO2 clock.\n");
+
+	new_parent = clk_get(NULL, "osc_clk");
+	if (!IS_ERR(new_parent)) {
+		clk_set_parent(clko2, new_parent);
+		clk_put(new_parent);
+	}
+	rate = clk_round_rate(clko2, 24000000);
+	clk_set_rate(clko2, rate);
+	clk_enable(clko2);
+	ret = gpio_request(CAM_GPIO, "cam-gpio");
+	if (ret) {
+		pr_err("failed to get GPIO CAM_GPIO: %d\n",
+			ret);
+		return;
+	}
+	gpio_direction_output(CAM_GPIO, 0);
+	msleep(5);
+	gpio_set_value(CAM_GPIO, 1);
+	msleep(5);
+	if (cpu_is_mx6q())
+		mxc_iomux_set_gpr_register(1, 19, 1, 0);
+	else if (cpu_is_mx6dl())
+		mxc_iomux_set_gpr_register(13, 0, 3, 0);
+}
+
+static void hb_mipi_sensor_reset(int powerdown)
+{
+        if (powerdown)
+                gpio_set_value(CAM_GPIO, 0);
+        else
+                gpio_set_value(CAM_GPIO, 1);
+
+        msleep(2);
+}
+
+static struct fsl_mxc_camera_platform_data mipi_csi2_data = {
+	.mclk = 24000000,
+	.mclk_source = 0,
+	.csi = 0,
+	.io_init = mx6q_mipi_sensor_io_init,
+/*	.pwdn = hb_mipi_sensor_reset, */
 };
 
 static struct regulator_consumer_supply hb_vmmc_consumers[] = {
@@ -201,11 +316,6 @@ static struct platform_device hb_vmmc_reg_devices = {
 	.dev	= {
 		.platform_data = &hb_vmmc_reg_config,
 	},
-};
-
-
-static struct viv_gpu_platform_data imx6q_gpu_pdata __initdata = {
-	.reserved_mem_size = SZ_128M,
 };
 
 static struct imx_asrc_platform_data imx_asrc_data = {
@@ -243,6 +353,84 @@ static struct mxc_spdif_platform_data mxc_spdif_data = {
 static struct imx_esai_platform_data sab_esai_pdata = {
 	.flags	= IMX_ESAI_NET,
 };
+#ifdef CONFIG_SND_SOC_SGTL5000 /* To be remved */
+
+static struct regulator_consumer_supply sgtl5000_sabrelite_consumer_vdda = {
+	.supply = "VDDA",
+	.dev_name = "0-000a",
+};
+
+static struct regulator_consumer_supply sgtl5000_sabrelite_consumer_vddio = {
+	.supply = "VDDIO",
+	.dev_name = "0-000a",
+};
+
+static struct regulator_consumer_supply sgtl5000_sabrelite_consumer_vddd = {
+	.supply = "VDDD",
+	.dev_name = "0-000a",
+};
+
+static struct regulator_init_data sgtl5000_sabrelite_vdda_reg_initdata = {
+	.num_consumer_supplies = 1,
+	.consumer_supplies = &sgtl5000_sabrelite_consumer_vdda,
+};
+
+static struct regulator_init_data sgtl5000_sabrelite_vddio_reg_initdata = {
+	.num_consumer_supplies = 1,
+	.consumer_supplies = &sgtl5000_sabrelite_consumer_vddio,
+};
+
+static struct regulator_init_data sgtl5000_sabrelite_vddd_reg_initdata = {
+	.num_consumer_supplies = 1,
+	.consumer_supplies = &sgtl5000_sabrelite_consumer_vddd,
+};
+
+static struct fixed_voltage_config sgtl5000_sabrelite_vdda_reg_config = {
+	.supply_name		= "VDDA",
+	.microvolts		= 2500000,
+	.gpio			= -1,
+	.init_data		= &sgtl5000_sabrelite_vdda_reg_initdata,
+};
+
+static struct fixed_voltage_config sgtl5000_sabrelite_vddio_reg_config = {
+	.supply_name		= "VDDIO",
+	.microvolts		= 3300000,
+	.gpio			= -1,
+	.init_data		= &sgtl5000_sabrelite_vddio_reg_initdata,
+};
+
+static struct fixed_voltage_config sgtl5000_sabrelite_vddd_reg_config = {
+	.supply_name		= "VDDD",
+	.microvolts		= 0,
+	.gpio			= -1,
+	.init_data		= &sgtl5000_sabrelite_vddd_reg_initdata,
+};
+
+static struct platform_device sgtl5000_sabrelite_vdda_reg_devices = {
+	.name	= "reg-fixed-voltage",
+	.id	= 0,
+	.dev	= {
+		.platform_data = &sgtl5000_sabrelite_vdda_reg_config,
+	},
+};
+
+static struct platform_device sgtl5000_sabrelite_vddio_reg_devices = {
+	.name	= "reg-fixed-voltage",
+	.id	= 1,
+	.dev	= {
+		.platform_data = &sgtl5000_sabrelite_vddio_reg_config,
+	},
+};
+
+static struct platform_device sgtl5000_sabrelite_vddd_reg_devices = {
+	.name	= "reg-fixed-voltage",
+	.id	= 2,
+	.dev	= {
+		.platform_data = &sgtl5000_sabrelite_vddd_reg_config,
+	},
+};
+
+#endif /* CONFIG_SND_SOC_SGTL5000 */
 static int __init imx6q_init_audio(void)
 {
 	struct clk *pll3_pfd, *esai_clk;
@@ -258,7 +446,14 @@ static int __init imx6q_init_audio(void)
 
 	clk_set_parent(esai_clk, pll3_pfd);
 	clk_set_rate(esai_clk, 101647058);
-
+	mxc_register_device(&mx6_hb_audio_device,
+			    &mx6_hb_audio_data);
+	imx6q_add_imx_ssi(1, &mx6_hb_ssi_pdata);
+#ifdef CONFIG_SND_SOC_SGTL5000
+	platform_device_register(&sgtl5000_sabrelite_vdda_reg_devices);
+	platform_device_register(&sgtl5000_sabrelite_vddio_reg_devices);
+	platform_device_register(&sgtl5000_sabrelite_vddd_reg_devices);
+#endif
 	return 0;
 }
 
@@ -277,23 +472,6 @@ static struct platform_device hb_ir = {
 };
 #endif
 
-#if 0
-/* Following will activate the analog audio out for testing */
-static struct platform_pwm_backlight_data mx6_hb_pwm_dummy1_backlight_data = {
-	.pwm_id = 0,
-	.max_brightness = 200,
-	.dft_brightness = 128,
-	.pwm_period_ns = 5000000,
-};
-
-static struct platform_pwm_backlight_data mx6_hb_pwm_dummy2_backlight_data = {
-	.pwm_id = 1,
-	.max_brightness = 201,
-	.dft_brightness = 128,
-	.pwm_period_ns = 1000000,
-};
-#endif
-
 static struct platform_pwm_backlight_data mx6_hb_pwm_lvds_backlight_data = {
 	.pwm_id = 2,
 	.max_brightness = 248,
@@ -301,11 +479,13 @@ static struct platform_pwm_backlight_data mx6_hb_pwm_lvds_backlight_data = {
 	.pwm_period_ns = 50000,
 };
 
-static struct platform_pwm_backlight_data mx6_hb_pwm_dsi_backlight_data = {
-	.pwm_id = 3,
-	.max_brightness = 203,
-	.dft_brightness = 128,
-	.pwm_period_ns = 50000,
+static struct mipi_csi2_platform_data mipi_csi2_pdata = {
+	.ipu_id	 = 0,
+	.csi_id = 0,
+	.v_channel = 0,
+	.lanes = 2,
+	.dphy_clk = "mipi_pllref_clk",
+	.pixel_clk = "emi_clk",
 };
 
 static int __init caam_setup(char *__unused)
@@ -324,10 +504,10 @@ extern void __init fixup_usom_board(struct machine_desc *desc, struct tag *tags,
 					char **cmdline, struct meminfo *mi);
 extern void __init mx6q_usom_reserve(void);
 extern struct sys_timer mx6_usom_timer;
-extern struct viv_gpu_platform_data imx6q_gpu_pdata;
 
 static void __init mx6_hb_board_init(void)
 {
+	int i;
 	if (cpu_is_mx6q())
 		mxc_iomux_v3_setup_multiple_pads(mx6q_hb_pads,
 			ARRAY_SIZE(mx6q_hb_pads));
@@ -338,6 +518,12 @@ static void __init mx6_hb_board_init(void)
 	mx6_usom_board_init();
 	imx6q_add_imx_uart(0, NULL);
 
+	for (i = 0; i < ARRAY_SIZE(capture_data); i++) {
+		if (!cpu_is_mx6q())
+			capture_data[i].ipu = 0;
+		imx6q_add_v4l2_capture(i, &capture_data[i]);
+	}
+	imx6q_add_mipi_csi2(&mipi_csi2_pdata);
 	imx6q_add_imx_i2c(0, &mx6q_hb_i2c_data);
 	imx6q_add_imx_i2c(2, &mx6q_hb_i2c_data);
 	i2c_register_board_info(0, mxc_i2c0_board_info, /* I2C1 */
@@ -346,7 +532,6 @@ static void __init mx6_hb_board_init(void)
 			ARRAY_SIZE(mxc_i2c2_board_info));
 
 	imx6q_add_sdhci_usdhc_imx(1, &mx6q_hb_sd2_data);
-//	imx_add_viv_gpu(&imx6_gpu_data, &imx6q_gpu_pdata);
 	imx6q_hb_init_usb();
 
 	imx6q_init_audio();
@@ -359,29 +544,45 @@ static void __init mx6_hb_board_init(void)
 	imx6q_add_mxc_pwm(1);
 	imx6q_add_mxc_pwm(2);
 	imx6q_add_mxc_pwm(3);
+
+	/* LVDS backlight */
 	imx6q_add_mxc_pwm_backlight(0, &mx6_hb_pwm_lvds_backlight_data);
-	imx6q_add_mxc_pwm_backlight(1, &mx6_hb_pwm_dsi_backlight_data);
-#if 0
-	imx6q_add_mxc_pwm_backlight(2, &mx6_hb_pwm_dummy1_backlight_data);
-	imx6q_add_mxc_pwm_backlight(3, &mx6_hb_pwm_dummy2_backlight_data);
-#endif
+
 	mxc_spdif_data.spdif_core_clk = clk_get_sys("mxc_spdif.0", NULL);
 	clk_put(mxc_spdif_data.spdif_core_clk);
 	imx6q_add_spdif(&mxc_spdif_data);
 	imx6q_add_spdif_dai();
 	imx6q_add_spdif_audio_device();
+
 	/* Add PCIe RC interface support */
 	imx6q_add_pcie(&mx6_hb_pcie_data);
 #ifdef CONFIG_IR_GPIO_CIR
 	/* Register the infra red receiver as a GPIO device */
 	platform_device_register(&hb_ir);
 #endif
+	/* 26 pin header gpio config */
+	gpio_request (HEADER26_PIN07, "pin07");
+	gpio_request (HEADER26_PIN11, "pin11");
+	gpio_request (HEADER26_PIN12, "pin12");
+	gpio_request (HEADER26_PIN13, "pin13");
+	gpio_request (HEADER26_PIN15, "pin15");
+	gpio_request (HEADER26_PIN16, "pin16");
+	gpio_request (HEADER26_PIN18, "pin18");
+	gpio_request (HEADER26_PIN22, "pin22");
+	gpio_export (HEADER26_PIN07, 1);
+	gpio_export (HEADER26_PIN11, 1);
+	gpio_export (HEADER26_PIN12, 1);
+	gpio_export (HEADER26_PIN13, 1);
+	gpio_export (HEADER26_PIN15, 1);
+	gpio_export (HEADER26_PIN16, 1);
+	gpio_export (HEADER26_PIN18, 1);
+	gpio_export (HEADER26_PIN22, 1);
 }
 
 /*
  * initialize __mach_desc_MX6Q_HB data structure.
  */
-MACHINE_START(HB, "SolidRun i.MX 6Quad/Dual/DualLite/Solo HummingBoard")
+MACHINE_START(HB, "SolidRun i.MX6 Quad/Dual/DualLite/Solo HummingBoard")
 	/* Maintainer: Freescale Semiconductor, Inc. */
 	.boot_params = MX6_PHYS_OFFSET + 0x100,
 	.fixup = fixup_usom_board,

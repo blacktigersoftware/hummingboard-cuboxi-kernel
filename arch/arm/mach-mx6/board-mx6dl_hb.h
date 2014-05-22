@@ -53,7 +53,7 @@ static iomux_v3_cfg_t mx6dl_hb_pads[] = {
 	MX6DL_PAD_DISP0_DAT8__PWM1_PWMO,
 	MX6DL_PAD_DISP0_DAT9__PWM2_PWMO,
 	MX6DL_PAD_SD4_DAT1__PWM3_PWMO,
-	MX6DL_PAD_SD4_DAT2__PWM4_PWMO,
+	MX6DL_PAD_SD4_DAT2__GPIO_2_10,
 
 	/* UART1 for debug */
 	MX6DL_PAD_CSI0_DAT10__UART1_TXD,
@@ -65,14 +65,15 @@ static iomux_v3_cfg_t mx6dl_hb_pads[] = {
 	MX6DL_PAD_SD4_DAT6__UART2_CTS,
 	MX6DL_PAD_SD4_DAT7__UART2_TXD,
 
-	/* USBOTG ID pin */
-	IOMUX_PAD(0x05E0, 0x0210, 3, 0x0790, 1, PAD_CTL_PKE | PAD_CTL_PUE | \
+	/* USBOTG ID pin
+	 * This controls RX_ER pad to be USB OTG ID and internally pull it down
+	 * thus forcing it to be USB host.
+	 * A better way to do this is by chaning the driver itself to accept
+	 * a flag indicating that this USB OTG will work only in host mode.
+	 */
+	IOMUX_PAD(0x05C4, 0x01F4, 0, 0x0790, 1, PAD_CTL_PKE | PAD_CTL_PUE | \
 		PAD_CTL_PUS_100K_DOWN | PAD_CTL_SPEED_LOW |	\
 		PAD_CTL_DSE_80ohm | PAD_CTL_SRE_FAST | PAD_CTL_HYS),
-	/*
-	 * Originally MX6Q_PAD_GPIO_1__USBOTG_ID, but we want it to be
-	 * pulled down ID pin for fixed host connection.
-	 */
 
 	/* USB power enable pins */
 	MX6DL_PAD_EIM_D22__GPIO_3_22,
@@ -92,7 +93,31 @@ static iomux_v3_cfg_t mx6dl_hb_pads[] = {
 	MX6DL_PAD_GPIO_4__USDHC2_CD,		/* SD2_CD */
 
 	/* IR in */
-	MX6DL_PAD_GPIO_2__GPIO_1_2,
+	MX6DL_PAD_EIM_DA5__GPIO_3_5,
+
+	/* AUD5 to SGTL5000 audio codec */
+	MX6DL_PAD_KEY_COL0__AUDMUX_AUD5_TXC,
+	MX6DL_PAD_KEY_ROW0__AUDMUX_AUD5_TXD,
+	MX6DL_PAD_KEY_COL1__AUDMUX_AUD5_TXFS,
+	MX6DL_PAD_DISP0_DAT19__AUDMUX_AUD5_RXD,
+	MX6DL_PAD_GPIO_5__CCM_CLKO,
+
+	/* Camera interface */
+	MX6Q_PAD_NANDF_CS2__CCM_CLKO2,
+
+	/* PCI-E signals */
+	MX6DL_PAD_EIM_DA4__GPIO_3_4,	/* Reset */
+	MX6DL_PAD_KEY_ROW1__GPIO_4_9,	/* Disable */
+
+	/* 26 pin header GPIOs */
+	MX6DL_PAD_GPIO_1__GPIO_1_1,
+	MX6DL_PAD_EIM_DA8__GPIO_3_8,
+	MX6DL_PAD_EIM_DA9__GPIO_3_9,
+	MX6DL_PAD_EIM_DA7__GPIO_3_7,
+	MX6DL_PAD_EIM_DA6__GPIO_3_6,
+	MX6DL_PAD_SD3_CMD__GPIO_7_2,
+	MX6DL_PAD_SD3_CLK__GPIO_7_3,
+	MX6DL_PAD_EIM_DA3__GPIO_3_3,
 };
 
 #endif

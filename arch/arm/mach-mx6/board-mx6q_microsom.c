@@ -335,21 +335,7 @@ static struct ipuv3_fb_platform_data usom_fb_data[] = {
 	.mode_str = "LDB-XGA",
 	.default_bpp = 16,
 	.int_clk = false,
-	}, {
-	.disp_dev = "lcd",
-	.interface_pix_fmt = IPU_PIX_FMT_RGB565,
-	.mode_str = "CLAA-WVGA",
-	.default_bpp = 16,
-	.int_clk = false,
-	.late_init = false,
-	}, {
-	.disp_dev = "ldb",
-	.interface_pix_fmt = IPU_PIX_FMT_RGB666,
-	.mode_str = "LDB-VGA",
-	.default_bpp = 16,
-	.int_clk = false,
-	.late_init = false,
-	},
+	}, 
 };
 
 static void hdmi_init(int ipu_id, int disp_id)
@@ -418,11 +404,11 @@ static struct fsl_mxc_ldb_platform_data ldb_data = {
 static struct imx_ipuv3_platform_data ipu_data[] = {
 	{
 	.rev = 4,
-	.csi_clk[0] = "clko_clk",
+	.csi_clk[0] = "clko2_clk",
 	.bypass_reset = false,
 	}, {
 	.rev = 4,
-	.csi_clk[0] = "clko_clk",
+	.csi_clk[0] = "clko2_clk",
 	.bypass_reset = false,
 	},
 };
@@ -448,19 +434,6 @@ static struct fsl_mxc_hdmi_platform_data hdmi_data = {
 	.disable_pins = hdmi_disable_ddc_pin,
 	.phy_reg_vlev = 0x0294,
 	.phy_reg_cksymtx = 0x800d,
-};
-static struct fsl_mxc_capture_platform_data capture_data[] = {
-	{
-		.csi = 0,
-		.ipu = 0,
-		.mclk_source = 0,
-		.is_mipi = 0,
-	}, {
-		.csi = 1,
-		.ipu = 0,
-		.mclk_source = 0,
-		.is_mipi = 1,
-	},
 };
 
 void __init fixup_usom_board(struct machine_desc *desc, struct tag *tags,
@@ -659,7 +632,7 @@ void __init mx6_usom_board_init(void)
 	gp_reg_id = usom_dvfscore_data.reg_id;
 	soc_reg_id = usom_dvfscore_data.soc_id;
 
-	/* Now this is reall dangerous !!! */
+	/* Now this is really dangerous !!! */
 	/* TODO - Enable LDO bypass mode */
 	/*
 	 * MX6DL/Solo only supports single IPU
@@ -694,10 +667,6 @@ void __init mx6_usom_board_init(void)
 					    (DMA_MEMORY_MAP |
 					     DMA_MEMORY_EXCLUSIVE));
 	}
-	imx6q_add_v4l2_capture(0, &capture_data[0]);
-	imx6q_add_v4l2_capture(1, &capture_data[1]);
-	imx6q_add_imx_snvs_rtc();
-
 	if (1 == caam_enabled)
 		imx6q_add_imx_caam();
 
