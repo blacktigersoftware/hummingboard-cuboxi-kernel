@@ -71,7 +71,7 @@ static iomux_v3_cfg_t mx6dl_hb_pads[] = {
 	 * A better way to do this is by chaning the driver itself to accept
 	 * a flag indicating that this USB OTG will work only in host mode.
 	 */
-	IOMUX_PAD(0x05C4, 0x01F4, 0, 0x0790, 1, PAD_CTL_PKE | PAD_CTL_PUE | \
+	IOMUX_PAD(0x05C4, 0x01F4, 0, 0x0790, 0, PAD_CTL_PKE | PAD_CTL_PUE | \
 		PAD_CTL_PUS_100K_DOWN | PAD_CTL_SPEED_LOW |	\
 		PAD_CTL_DSE_80ohm | PAD_CTL_SRE_FAST | PAD_CTL_HYS),
 
