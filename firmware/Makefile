@@ -26,6 +26,7 @@ fw-shipped- += acenic/tg1.bin
 else
 acenic-objs := acenic/tg1.bin acenic/tg2.bin
 endif
+fw-shipped-$(CONFIG_BRCMFMAC_SDIO) += brcm/bcm4329_nvram.txt brcm/bcm4329_fw.bin brcm/bcm4330_nvram.txt brcm/bcm4330_fw.bin
 fw-shipped-$(CONFIG_3C359) += 3com/3C359.bin
 fw-shipped-$(CONFIG_ACENIC) += $(acenic-objs)
 fw-shipped-$(CONFIG_ADAPTEC_STARFIRE) += adaptec/starfire_rx.bin \

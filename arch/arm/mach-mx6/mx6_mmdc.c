@@ -70,6 +70,17 @@ static int curr_ddr_rate;
 #define MIN_DLL_ON_FREQ		333000000
 #define MAX_DLL_OFF_FREQ		125000000
 
+#ifdef CONFIG_MACH_MICROSOM
+unsigned long ddr3_dll_mx6q[][2] = {
+	{0x0c, 0x0},
+	{0x10, 0x0},
+	{0x1C, 0x02088032},
+	{0x1C, 0x0208803a},
+	{0x1C, 0x09408030},
+	{0x1C, 0x09408038},
+	{0x818, 0x7},
+};
+#else
 unsigned long ddr3_dll_mx6q[][2] = {
 	{0x0c, 0x0},
 	{0x10, 0x0},
@@ -79,6 +90,7 @@ unsigned long ddr3_dll_mx6q[][2] = {
 	{0x1C, 0x08408038},
 	{0x818, 0x0},
 };
+#endif
 
 unsigned long ddr3_calibration[][2] = {
 	{0x83c, 0x0},
@@ -91,6 +103,17 @@ unsigned long ddr3_calibration[][2] = {
 	{0x4850, 0x0},
 };
 
+#ifdef CONFIG_MACH_MICROSOM
+unsigned long ddr3_dll_mx6dl[][2] = {
+	{0x0c, 0x0},
+	{0x10, 0x0},
+	{0x1C, 0x00008032},
+	{0x1C, 0x0000803a},
+	{0x1C, 0x05208030},
+	{0x1C, 0x05208038},
+	{0x818, 0x0},
+};
+#else
 unsigned long ddr3_dll_mx6dl[][2] = {
 	{0x0c, 0x0},
 	{0x10, 0x0},
@@ -100,6 +123,7 @@ unsigned long ddr3_dll_mx6dl[][2] = {
 	{0x1C, 0x07208038},
 	{0x818, 0x0},
 };
+#endif
 
 unsigned long iomux_offsets_mx6q[][2] = {
 	{0x5A8, 0x0},
